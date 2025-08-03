@@ -22,13 +22,6 @@ class encoder(nn.Module):
 
         return x
 
-class latent(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def forward(self, input):
-        pass
-
 class decoder(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -53,7 +46,6 @@ class auto_encoder(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.enc = encoder()
-        # self.lat = latent()
         self.dec = decoder()
 
     def forward(self, input):
@@ -61,6 +53,5 @@ class auto_encoder(nn.Module):
         x = tf.normalize(x)
 
         x = self.enc(x)
-        # x = self.lat(x)
         x = self.dec(x)
         return x
