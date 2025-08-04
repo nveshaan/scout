@@ -6,8 +6,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
-from encoder.vanilla_ae import auto_encoder
+from encoder.vanilla_ae import AutoEncoder
 from dataloader.dataset import SampleData
+import torchvision.transforms.functional as tf
 
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -29,7 +30,9 @@ def train_epoch(loader, model, loss_fn, optimizer, device, epoch):
 
     loop = tqdm(loader, desc=f"Epoch {epoch+1} [Train]", leave=False)
     for batch_idx, img in enumerate(loop):
-        img = [x.to(device) for x in img]
+        img = img.to(device)
+        img = tf.resize(img, (128, 128))
+        img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
         pred = model(img)
         loss = loss_fn(pred, img)
@@ -50,7 +53,9 @@ def validate_epoch(loader, model, loss_fn, device, epoch):
     with torch.inference_mode():
         loop = tqdm(loader, desc=f"Epoch {epoch+1} [Val]", leave=False)
         for batch_idx, img in enumerate(loop):
-            img = [x.to(device) for x in img]
+            img = img.to(device)
+            img = tf.resize(img, (128, 128))
+            img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
             pred = model(img)
             loss = loss_fn(pred, img)
@@ -62,20 +67,13 @@ def validate_epoch(loader, model, loss_fn, device, epoch):
 @hydra.main(config_path="../configs", config_name="train_config", version_base="1.3")
 def main(cfg: DictConfig):
     set_seed(cfg.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
     if cfg.wandb.log:
         wandb.init(project=cfg.wandb.project, name=cfg.wandb.name, config=OmegaConf.to_container(cfg))
 
     dataset = SampleData(
-        file_path=cfg.data.file_path,
-        obs_horizon=cfg.data.obs_horizon,
-        act_horizon=cfg.data.act_horizon,
-        gap=cfg.data.gap,
-        obs_stride=cfg.data.obs_stride,
-        act_stride=cfg.data.act_stride,
-        obs_keys=cfg.data.obs_keys,
-        act_keys=cfg.data.act_keys
+        path = cfg.data.path,
     )
 
     val_size = int(len(dataset) * cfg.data.val_ratio)
@@ -83,11 +81,11 @@ def main(cfg: DictConfig):
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
     train_loader = DataLoader(train_dataset, batch_size=cfg.data.batch_size, shuffle=True,
-                              num_workers=cfg.data.num_workers, pin_memory=True)
+                              num_workers=cfg.data.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=cfg.data.batch_size, shuffle=False,
-                            num_workers=cfg.data.num_workers, pin_memory=True)
+                            num_workers=cfg.data.num_workers)
 
-    model = auto_encoder(backbone=cfg.model.backbone, pretrained=cfg.model.pretrained, steps=cfg.model.steps, commands=cfg.model.commands).to(device)
+    model = AutoEncoder().to(device)
     if cfg.train.use_compile:
         model = torch.compile(model)
 
@@ -96,8 +94,8 @@ def main(cfg: DictConfig):
 
     for epoch in range(cfg.train.epochs):
         print(f"\n Epoch {epoch+1}/{cfg.train.epochs}")
-        train_loss = train_epoch(train_loader, model, loss_fn, optimizer, device, epoch, cfg.wandb.log)
-        val_loss = validate_epoch(val_loader, model, loss_fn, device, epoch, cfg.wandb.log)
+        train_loss = train_epoch(train_loader, model, loss_fn, optimizer, device, epoch)
+        val_loss = validate_epoch(val_loader, model, loss_fn, device, epoch)
 
         print(f" Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f}")
 
