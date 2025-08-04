@@ -7,8 +7,10 @@ class AutoEncoder(nn.Module):
         super().__init__(*args, **kwargs)
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),  #    16 x 64 x 64
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),                 #    16 x 32 x 32
             nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1), #    32 x 16 x 16
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),                 #    32 x 8 x 8
             
             nn.Flatten(),
@@ -26,8 +28,10 @@ class AutoEncoder(nn.Module):
 
             nn.Upsample((16, 16)),                                              #   32 x 16 x 16
             nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1),     #   16 x 32 x 32
+            nn.ReLU(),
             nn.Upsample((64, 64)),                                              #   16 x 64 x 64
-            nn.ConvTranspose2d(16, 3, kernel_size=4, stride=2, padding=1),      #   3 x 128 x 128     
+            nn.ConvTranspose2d(16, 3, kernel_size=4, stride=2, padding=1),      #   3 x 128 x 128
+            nn.ReLU(),
         )
 
     def forward(self, x):        

@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, random_split
 from encoder.vanilla_ae import AutoEncoder
 from dataloader.dataset import SampleData
 import torchvision.transforms.functional as tf
+from torchinfo import summary
 
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -86,6 +87,8 @@ def main(cfg: DictConfig):
                             num_workers=cfg.data.num_workers)
 
     model = AutoEncoder().to(device)
+    summary(model, input_size=(1, 3, 128, 128))
+
     if cfg.train.use_compile:
         model = torch.compile(model)
 
