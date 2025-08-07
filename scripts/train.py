@@ -33,7 +33,8 @@ def train_epoch(loader, model, loss_fn, optimizer, device, epoch):
     for batch_idx, img in enumerate(loop):
         img = img.to(device)
         img = tf.resize(img, (128, 128))
-        img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        # img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        # img = img / 255
 
         pred = model(img)
         loss = loss_fn(pred, img)
@@ -56,7 +57,8 @@ def validate_epoch(loader, model, loss_fn, device, epoch):
         for batch_idx, img in enumerate(loop):
             img = img.to(device)
             img = tf.resize(img, (128, 128))
-            img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # img = tf.normalize(img, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # img = img / 255
 
             pred = model(img)
             loss = loss_fn(pred, img)
@@ -87,7 +89,7 @@ def main(cfg: DictConfig):
                             num_workers=cfg.data.num_workers)
 
     model = AutoEncoder().to(device)
-    summary(model, input_size=(1, 3, 128, 128))
+    # summary(model, input_size=(1, 3, 128, 128))
 
     if cfg.train.use_compile:
         model = torch.compile(model)

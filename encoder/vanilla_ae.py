@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision.transforms.functional as tf
 
 class AutoEncoder(nn.Module):
     def __init__(self, *args, **kwargs):
@@ -31,10 +30,10 @@ class AutoEncoder(nn.Module):
             nn.ReLU(),
             nn.Upsample((64, 64)),                                              #   16 x 64 x 64
             nn.ConvTranspose2d(16, 3, kernel_size=4, stride=2, padding=1),      #   3 x 128 x 128
-            nn.ReLU(),
+            nn.Sigmoid(),
         )
 
-    def forward(self, x):        
+    def forward(self, x):
         x = self.encoder(x)
         x = self.decoder(x)
         return x

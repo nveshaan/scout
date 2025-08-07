@@ -5,13 +5,13 @@ defaults:
 
 seed: 42
 data:
-  path: "data/images/5"
+  path: "data/images/1"
   val_ratio: 0.2
   batch_size: 32
-  num_workers: 1
+  num_workers: 2
 
 train:
-  epochs: 5
+  epochs: 50
   lr: 0.001
   use_compile: False
   save: True
